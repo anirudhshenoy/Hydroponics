@@ -1,8 +1,9 @@
 #include <elementory.h>
 
-#define TIME_INTERVAL_HRS 12
+#define TIME_INTERVAL_HRS 10
 #define DIVIDE_BY 3600L
 int pumppin=10;
+int lightpin=2;
 int waterpin=A0;
 int water_level=0;
 unsigned long time_start=0;
@@ -37,10 +38,10 @@ void pump_cycle(int pumppin){
   while(1){
       water_level=get_water_level(waterpin);
       failsafe =rtc.now();
-      if(water_level>4) {
+      if(water_level>=4) {
         break;
       }
-      else if(((failsafe.unixtime()/60L)-(local_time.unixtime()/60L))>7L){
+      else if(((failsafe.unixtime()/60L)-(local_time.unixtime()/60L))>6L){
         lcd.setCursor(7,0);
         lcd.print("F");
         break;
@@ -58,16 +59,26 @@ void pump_cycle(int pumppin){
    }
 }
 
+void update_time_remaining(){
+  lcd.setCursor(9,0);
+  lcd.print("   ");
+  lcd.setCursor(9,0);
+  Serial.println(((TIME_INTERVAL_HRS*DIVIDE_BY)+last_pump.unixtime()));
+  Serial.println(local_time.unixtime());
+  long time_remaining=(((TIME_INTERVAL_HRS*DIVIDE_BY)+last_pump.unixtime())-local_time.unixtime())/60L;
+  lcd.print(time_remaining);
+}
+
 void update_time(){
   local_time = rtc.now(); 
   lcd.setCursor(0,0);
   lcd.print("     ");
   lcd.setCursor(0,0);
   lcd.print(String(local_time.hour())+":"+String(local_time.minute()));
-
 }
 
 void setup() {
+   Serial.begin(9600);
    lcd.begin(16,2);    
    lcd.backlight();                 
    rtc.begin();
@@ -76,19 +87,27 @@ void setup() {
    lcd.setCursor(0,1);
    lcd.print("Last "+ String(last_pump.hour())+":"+String(last_pump.minute())+"  "+String(last_pump.day())+"/"+String(last_pump.month()));
    pinMode(pumppin,OUTPUT);
+   pinMode(lightpin,OUTPUT);
  
 }
 
 void loop() {
-  update_time(); 
- 
+  update_time();
+  update_time_remaining(); 
+  if(local_time.hour() >=0 && local_time.hour() <=6){
+    digitalWrite(lightpin,HIGH);
+  }
+  else {
+    digitalWrite(lightpin,LOW);
+  }
+  
   if ((local_time.unixtime()/DIVIDE_BY)-(last_pump_unix/DIVIDE_BY)>=TIME_INTERVAL_HRS) {
     for (int cycle=0 ; cycle<=2; cycle++){
       
       lcd.setCursor(9,0);
       lcd.print("Pump:" + String(cycle));
       pump_cycle(pumppin);
-      delay(180000);
+      delay(150000);
       }
     lcd.setCursor(9,0);
     lcd.print("       ");
