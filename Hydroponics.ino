@@ -1,8 +1,8 @@
 #include <elementory.h>
 
-#define TIME_INTERVAL_HRS 0
+#define TIME_INTERVAL_HRS 8
 #define DIVIDE_BY 3600L
-#define DRIP_DURATION 25L
+#define DRIP_DURATION 27L
 #define FAILSAFE_DURATION 30L
 int pumppin=12;
 int lightpin=2;
